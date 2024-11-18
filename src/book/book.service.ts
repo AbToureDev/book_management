@@ -20,7 +20,9 @@ export class BookService {
   ) {}
   async create(createBookDto: CreateBookDto) {
     // Creation d'un nouveau livre
-    return await this.bookRepository.save(createBookDto);
+    const book = this.bookRepository.create(createBookDto);
+
+    return await this.bookRepository.save(book);
   }
 
   async findAll(params: PaginateRequest) {
@@ -56,7 +58,9 @@ export class BookService {
           publicationDate: publicationDateObj,
         });
       } else {
-        throw new Error('La date de publication fournie est invalide');
+        throw new BadRequestException(
+          'La date de publication fournie est invalide',
+        );
       }
     }
 
@@ -72,7 +76,7 @@ export class BookService {
   }
 
   async findOne(id: string) {
-    //Trouver un livre par
+    //Trouver un livre par id
     const book = await this.bookRepository
       .createQueryBuilder('user')
       .where('user.id = :id', { id: id })
@@ -124,5 +128,32 @@ export class BookService {
       // Gestion des erreurs et renvoi d'un message d'erreur
       throw new BadRequestException(`${error.response.message}`);
     }
+  }
+
+  async getBookRating(id: string) {
+    // verifie si le livre existe
+    const book = await this.findOne(id);
+    const currentYear = new Date().getFullYear();
+    const publicationYear = new Date(book.publicationDate).getFullYear();
+
+    // Calcul de la note en fonction de l'année de publication
+    const publicationScore = Math.max(10 - (currentYear - publicationYear), 1);
+
+    // Calcul de la note en fonction de l'auteur
+    const authorRatings: { [author: string]: number } = {
+      'Auteur 1': 10,
+      'Auteur 2': 8,
+      'Auteur 3': 5,
+    };
+    const authorScore = authorRatings[book.author] || 5;
+
+    // Moyenne pondérée des scores
+    const finalRating = publicationScore * 0.7 + authorScore * 0.3;
+
+    return {
+      message: `Book score.`,
+      score: finalRating,
+      score_rounded: Math.min(Math.round(finalRating), 10),
+    };
   }
 }

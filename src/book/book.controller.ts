@@ -55,7 +55,13 @@ export class BookController {
   remove(@Param('id') id: string) {
     return this.bookService.remove(id);
   }
-  @Get('findBookByISBN/:isbn')
+
+  @Get(':id/rating')
+  async getBookRating(@Param('id') id: string) {
+    return await this.bookService.getBookRating(id);
+  }
+
+  @Get('find_book_by_iSBN/:isbn')
   @ApiOperation({
     summary:
       'Find book by isbn, with external api in exemple le isbn:0201558025',
